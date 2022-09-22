@@ -17,4 +17,16 @@ class ServerTest < Test::Unit::TestCase
     b = JSON.parse(last_response.body)
     assert_equal 10, b['files'].size
   end
+
+  def test_read_file
+    get 'api/v1/logs?filename=sample-1.log'
+    assert last_response.ok?
+    b = JSON.parse(last_response.body)
+    assert_equal 10, b['data'].size
+  end
+
+  def test_file_not_found
+    get 'api/v1/logs?filename=not-found-1.log'
+    assert last_response.not_found?
+  end
 end

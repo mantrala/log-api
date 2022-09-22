@@ -22,7 +22,7 @@ get '/api/v1/logs' do
 
   f = Services::CriblFile.new(LOG_LOCATION, params[:filename])
   if f.exists?
-    f.process
+    json(:data => f.process)
   else
     status 404
     return json(:error => 'File not found')
