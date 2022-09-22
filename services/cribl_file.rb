@@ -4,10 +4,11 @@ module Services
     attr_accessor :filename, :location
     attr_reader :default_lines
 
-    def initialize(location, name, default_lines = MAX_LINES)
+    def initialize(location, params)
       @location = location
-      @filename = name
-      @default_lines = default_lines
+      @filename = params[:filename]
+      @default_lines = params[:lines].to_i || MAX_LINES
+      @default_lines = MAX_LINES if @default_lines.to_i <= 0
     end
 
     def exists?
@@ -42,7 +43,9 @@ module Services
           line += 1
         end
 
-        break if line > default_lines || fd.tell == 0
+        break if line >= default_lines || fd.tell == 0
+      rescue StandardError
+        break # no more lines to read
       end
 
       fd.read

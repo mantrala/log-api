@@ -20,7 +20,7 @@ get '/api/v1/logs' do
     return json(:files => files)
   end
 
-  f = Services::CriblFile.new(LOG_LOCATION, params[:filename])
+  f = Services::CriblFile.new(LOG_LOCATION, params)
   if f.exists?
     json(:data => f.process)
   else

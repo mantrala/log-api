@@ -21,19 +21,25 @@ class CriblFileTest < Test::Unit::TestCase
     ]
 
     conditions.each do |c|
-      f = Services::CriblFile.new(LOG_LOCATION, c[0])
+      f = Services::CriblFile.new(LOG_LOCATION, {:filename => c[0]})
       assert_equal(c[1], f.exists?, c[2])
     end
   end
 
   def test_read
-    f = Services::CriblFile.new(LOG_LOCATION, 'sample-1.log', 2)
+    f = Services::CriblFile.new(LOG_LOCATION, {:filename => 'sample-1.log', :lines => 2})
     original = [
       '03/22 08:51:06 INFO   :....mailbox_register: mailbox allocated for rsvp-udp',
       '03/22 08:51:06 TRACE  :..entity_initialize: interface 9.67.117.98, entity for rsvp allocated and'
     ]
 
     assert_equal original.reverse, f.process
+  end
+
+  def test_read_with_negative_lines
+    f = Services::CriblFile.new(LOG_LOCATION, {:filename => 'sample-1.log', :lines => -2})
+
+    assert_equal 10, f.process.size
   end
 end
 
