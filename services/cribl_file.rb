@@ -2,13 +2,17 @@ module Services
   class CriblFile
     MAX_LINES = 10
     attr_accessor :filename, :location
-    attr_reader :default_lines
+    attr_reader :default_lines, :q, :ignore_case
 
     def initialize(location, params)
+      # could move parsing to a new class with it's own responsibilities
       @location = location
       @filename = params[:filename]
       @default_lines = params[:lines].to_i || MAX_LINES
       @default_lines = MAX_LINES if @default_lines.to_i <= 0
+
+      @q = params[:q]
+      @ignore_case = params[:ignore_case]&.to_sym == :false ? false : true
     end
 
     def exists?
@@ -23,7 +27,21 @@ module Services
       return unless exists?
 
       data = read
-      data.split("\n").reverse
+      data = data.split("\n").reverse
+
+      # should we limit the size of the query?
+      return data if q.nil? || q.strip.length <= 0
+
+      queried_data = []
+      data.each do |l|
+        if ignore_case && l =~ /#{q}/i
+          queried_data << l
+        elsif l =~ /#{q}/
+          queried_data << l
+        end
+      end
+
+      queried_data
     end
 
 

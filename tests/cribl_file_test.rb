@@ -41,5 +41,17 @@ class CriblFileTest < Test::Unit::TestCase
 
     assert_equal 10, f.process.size
   end
+
+  def test_query_with_nocase
+    f = Services::CriblFile.new(LOG_LOCATION, {:filename => 'sample-1.log', :q => 'mailBOX_register'})
+
+    assert_equal 4, f.process.size
+  end
+
+  def test_query_with_case
+    f = Services::CriblFile.new(LOG_LOCATION, {:filename => 'sample-1.log', :q => 'mailBOX_register', :ignore_case => :false})
+
+    assert_equal 0, f.process.size
+  end
 end
 
