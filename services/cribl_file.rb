@@ -1,6 +1,7 @@
 module Services
   class CriblFile
     MAX_LINES = 10
+
     attr_accessor :filename, :location
     attr_reader :default_lines, :q, :ignore_case
 
@@ -26,29 +27,42 @@ module Services
     def process
       return unless exists?
 
-      data = read
-      data = data.split("\n").reverse
-
-      # should we limit the size of the query?
-      return data if q.nil? || q.strip.length <= 0
-
       queried_data = []
-      data.each do |l|
-        if ignore_case && l =~ /#{q}/i
-          queried_data << l
-        elsif l =~ /#{q}/
-          queried_data << l
+      page_size = default_lines
+      searched_lines = 0
+
+      while queried_data.size <= default_lines
+        data, done = read(page_size)
+        data = data.split("\n").reverse
+
+        # should we limit the size of the query?
+        return data if q.nil? || q.strip.length <= 0
+
+        data = data[searched_lines..page_size]
+        data.each do |l|
+          add_line = false
+          if ignore_case && l =~ /#{q}/i
+            add_line = true
+          elsif l =~ /#{q}/
+            add_line = true
+          end
+
+          queried_data << l if add_line && queried_data.size < default_lines
         end
+
+        break if done || queried_data.size == default_lines
+
+        searched_lines = page_size
+        page_size += MAX_LINES
       end
 
       queried_data
     end
 
-
     private
 
     # simple implementation of tail
-    def read
+    def read(lines_to_read)
       pos = 0
       line = 0
 
@@ -61,12 +75,12 @@ module Services
           line += 1
         end
 
-        break if line >= default_lines || fd.tell == 0
+        break if line >= lines_to_read || fd.tell == 0
       rescue StandardError
-        break # no more lines to read
+        return [fd.read, true] # no more lines to read
       end
 
-      fd.read
+      [fd.read, false]
     end
 
     def fd
