@@ -8,7 +8,7 @@ class ServerTest < Test::Unit::TestCase
   include Rack::Test::Methods
 
   def app
-    Sinatra::Application
+    Server
   end
 
   def test_returns_all_files

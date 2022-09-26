@@ -1,3 +1,6 @@
+require 'pry'
+require 'pry-byebug'
+
 module Services
   class CriblFile
     MAX_LINES = 10
