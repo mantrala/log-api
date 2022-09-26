@@ -68,6 +68,7 @@ module Services
     def read(lines_to_read)
       pos = 0
       line = 0
+      data_read = false
 
       loop do
         pos -= 1
@@ -75,7 +76,10 @@ module Services
         char = fd.read(1)
 
         if line_break?(char)
-          line += 1
+          line += 1 if data_read
+        else
+          # ensure that last empty lines are not read as real lines
+          data_read = true
         end
 
         break if line >= lines_to_read || fd.tell == 0

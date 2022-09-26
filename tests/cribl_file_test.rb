@@ -53,5 +53,13 @@ class CriblFileTest < Test::Unit::TestCase
 
     assert_equal 0, f.process.size
   end
+
+  def test_last_new_lines
+    f = Services::CriblFile.new(LOG_LOCATION, {:filename => 'test.log', :lines => 1})
+    data = f.process
+
+    assert_equal 1, data.size
+    assert_equal ['line 3'], data
+  end
 end
 
