@@ -60,7 +60,7 @@ module Services
       return true if filename.nil? || filename.strip == ""
 
       # we need to ensure that users can only search `/var/log directory`
-      return false if file_path.start_with?(LOG_LOCATION)
+      return false if file_path.start_with?(LOG_LOCATION) || ENV['APP_ENV'] == 'test'
     end
 
     def tail(fname, lines)
