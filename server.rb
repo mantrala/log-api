@@ -3,7 +3,7 @@ require 'sinatra/json'
 
 require_relative './services/cribl_file.rb'
 
-LOG_LOCATION = './logs'
+LOG_LOCATION = '/var/log'
 MAX_FILES_RETURNED = 10
 
 class Server < Sinatra::Base

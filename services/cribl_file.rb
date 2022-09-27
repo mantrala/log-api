@@ -57,7 +57,10 @@ module Services
 
     # could filename be encoded when stored?
     def invalid?
-      true if filename.nil? || filename.strip == ""
+      return true if filename.nil? || filename.strip == ""
+
+      # we need to ensure that users can only search `/var/log directory`
+      return false if file_path.start_with?(LOG_LOCATION)
     end
 
     def tail(fname, lines)
