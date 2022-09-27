@@ -61,5 +61,14 @@ class CriblFileTest < Test::Unit::TestCase
     assert_equal 1, data.size
     assert_equal ['line 3'], data
   end
+
+  def test_ensure_all_chars_show_up
+    f = Services::CriblFile.new(LOG_LOCATION, {:filename => 'test.log'})
+    data = f.process
+
+    assert_equal 3, data.size
+    assert_equal ['line 3', 'line 2', 'line 1'], data
+
+  end
 end
 

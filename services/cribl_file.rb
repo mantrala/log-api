@@ -84,6 +84,8 @@ module Services
 
         break if line >= lines_to_read || fd.tell == 0
       rescue StandardError
+        pos += 1
+        fd.seek(pos, IO::SEEK_END)
         return [fd.read, true] # no more lines to read
       end
 
