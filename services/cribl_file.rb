@@ -4,6 +4,7 @@ require 'pry-byebug'
 module Services
   class CriblFile
     MAX_LINES = 10
+    PAGE_SIZE = 1024 * 64
 
     attr_accessor :filename, :location
     attr_reader :default_lines, :q, :ignore_case
@@ -30,71 +31,25 @@ module Services
     def process
       return unless exists?
 
+      data = tail(file_path, default_lines)
+
+      # should we limit the size of the query?
+      return data if q.nil? || q.strip.length <= 0
+
       queried_data = []
-      page_size = default_lines
-      searched_lines = 0
-
-      while queried_data.size <= default_lines
-        data, done = read(page_size)
-        data = data.split("\n").reverse
-
-        # should we limit the size of the query?
-        return data if q.nil? || q.strip.length <= 0
-
-        data = data[searched_lines..page_size]
-        data.each do |l|
-          add_line = false
-          if ignore_case && l =~ /#{q}/i
-            add_line = true
-          elsif l =~ /#{q}/
-            add_line = true
-          end
-
-          queried_data << l if add_line && queried_data.size < default_lines
+      data.each do |l|
+        if ignore_case && l =~ /#{q}/i
+          queried_data << l
+        elsif l =~ /#{q}/
+          queried_data << l
         end
-
-        break if done || queried_data.size == default_lines
-
-        searched_lines = page_size
-        page_size += MAX_LINES
       end
 
       queried_data
     end
 
+
     private
-
-    # simple implementation of tail
-    def read(lines_to_read)
-      pos = 0
-      line = 0
-      data_read = false
-
-      loop do
-        pos -= 1
-        fd.seek(pos, IO::SEEK_END)
-        char = fd.read(1)
-
-        if line_break?(char)
-          line += 1 if data_read
-        else
-          # ensure that last empty lines are not read as real lines
-          data_read = true
-        end
-
-        break if line >= lines_to_read || fd.tell == 0
-      rescue StandardError
-        pos += 1
-        fd.seek(pos, IO::SEEK_END)
-        return [fd.read, true] # no more lines to read
-      end
-
-      [fd.read, false]
-    end
-
-    def fd
-      @fd ||= File.open(file_path)
-    end
 
     def file_path
       File.join(location, filename)
@@ -105,8 +60,45 @@ module Services
       true if filename.nil? || filename.strip == ""
     end
 
-    def line_break?(char)
-      char == "\n"
+    def tail(fname, lines)
+      File.open(fname) do |file|
+        offset = file_offset(file, lines, "\n")
+        file.seek(file.size - offset)
+        return file.read.split("\n").reverse
+      end
+
+    end
+
+    def file_chunks(file, size)
+      num_chunks = file.size / size
+      num_chunks -= 1 if file.size == num_chunks * size
+      len = file.size - num_chunks * size
+      until num_chunks < 0
+        file.seek(num_chunks * size)
+        yield file.read(len)
+        num_chunks -= 1
+        len = size
+      end
+    end
+
+    def file_offset(file, line_count, line_separator)
+      offset = 0
+      file_chunks(file, PAGE_SIZE) do |chunk|
+        chunk.size.times do |i|
+          chr = chunk[chunk.size - i - 1]
+          if chr == line_separator || (offset == 0 && i == 0 && chr != line_separator)
+            line_count -= 1
+
+            if line_count < 0
+              offset += i
+              return offset
+            end
+          end
+        end
+        offset += chunk.size
+      end
+
+      offset
     end
   end
 end
